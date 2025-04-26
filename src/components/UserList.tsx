@@ -1,47 +1,52 @@
-import { type User} from '../types.d'
+import { SortBy, type User } from '../types.d'
 
 interface Props {
-    users: User[]
+  changeSorting: (sort: SortBy) => void
+  deleteUser: (email: string) => void
+  showColors: boolean
+  users: User[]
 }
 
-export function UsersLists ({ users }: Props) {
-    return (
-        <table>
-            <thead>
-                <tr>
-                    <th>Foto</th>
-                    <th>Nombre</th>
-                    <th>Apellidos</th>
-                    <th>Pais</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
+export function UsersList ({ changeSorting, deleteUser, showColors, users }: Props) {
+  return (
+    <table width='100%'>
+      <thead>
+        <tr>
+          <th>Foto</th>
+          <th className='pointer' onClick={() => { changeSorting(SortBy.NAME) }}>Nombre</th>
+          <th className='pointer' onClick={() => { changeSorting(SortBy.LAST) }}>Apellido</th>
+          <th className='pointer' onClick={() => { changeSorting(SortBy.COUNTRY) }}>País</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
 
-            <tbody>
-                {
-                    users.map(user => {
-                        return (
-                            <tr key={user.id.value}>
-                                <td>
-                                    <img src={user.picture.thumbnail} />
-                                </td>
-                                <td>
-                                    {user.name.first}
-                                </td>
-                                <td>
-                                   {user.name.last}
-                                </td>
-                                <td>
-                                    {user.location.country}
-                                </td>
-                                <td>
-                                     <button>Borrar</button>
-                                </td>
-                            </tr>
-                        )
-                    })
-                }
-            </tbody>
-        </table>
-    )
+      <tbody className={showColors ? 'table--showColors' : ''}>
+        {
+          users.map((user) => {
+            return (
+              <tr key={user.email}>
+                <td>
+                  <img src={user.picture.thumbnail} />
+                </td>
+                <td>
+                  {user.name.first}
+                </td>
+                <td>
+                {user.name.last}
+                </td>
+                <td>
+                  {user.location.country}
+                </td>
+                <td>
+                  <button onClick={() => {
+                    deleteUser(user.email)
+                  }}>Borrar</button>
+                </td>
+              </tr>
+            )
+          })
+        }
+      </tbody>
+    </table>
+  )
 }
