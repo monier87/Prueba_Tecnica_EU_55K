@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import './App.css'
 import { UsersList } from './components/UserList'
-import { SortBy, type User } from './types.d'
+import { type User, SortBy } from './types.d'
+import { useUsers } from './hooks/useUser'
+import { Results } from './components/Results'
 
 function App () {
-  const [users, setUsers] = useState<User[]>([])
+  const { isLoading, isError, users, refetch, fetchNextPage, hasNextPage } = useUsers()
+
   const [showColors, setShowColors] = useState(false)
   const [sorting, setSorting] = useState<SortBy>(SortBy.NONE)
   const [filterCountry, setFilterCountry] = useState<string | null>(null)
-
-  const originalUsers = useRef<User[]>([])
-  // useRef -> para guardar un valor
-  // que queremos que se comparta entre renderizados
-  // pero que al cambiar, no vuelva a renderizar el componente
 
   const toggleColors = () => {
     setShowColors(!showColors)
@@ -24,32 +22,20 @@ function App () {
   }
 
   const handleReset = () => {
-    setUsers(originalUsers.current)
+    void refetch()
   }
 
   const handleDelete = (email: string) => {
-    const filteredUsers = users.filter((user) => user.email !== email)
-    setUsers(filteredUsers)
+    // const filteredUsers = users.filter((user) => user.email !== email)
+    // setUsers(filteredUsers)
   }
 
   const handleChangeSort = (sort: SortBy) => {
     setSorting(sort)
   }
 
-  useEffect(() => {
-    fetch('https://randomuser.me/api?results=100')
-      .then(async res => await res.json())
-      .then(res => {
-        setUsers(res.results)
-        originalUsers.current = res.results
-      })
-      .catch(err => {
-        console.error(err)
-      })
-  }, [])
-
   const filteredUsers = useMemo(() => {
-    console.log('calculate filteredUsers')
+    console.log('calculate filte edUsers')
     return filterCountry != null && filterCountry.length > 0
       ? users.filter(user => {
         return user.location.country.toLowerCase().includes(filterCountry.toLowerCase())
@@ -74,28 +60,10 @@ function App () {
     })
   }, [filteredUsers, sorting])
 
-  // const filteredUsers = (() => {
-  //   console.log('calculate filteredUsers')
-  //   return filterCountry != null && filterCountry.length > 0
-  //     ? users.filter(user => {
-  //       return user.location.country.toLowerCase().includes(filterCountry.toLowerCase())
-  //     })
-  //     : users
-  // })()
-
-  // const sortedUsers = (() => {
-  //   console.log('calculate sortedUsers')
-
-  //   return sortByCountry
-  //     ? filteredUsers.toSorted(
-  //       (a, b) => a.location.country.localeCompare(b.location.country)
-  //     )
-  //     : filteredUsers
-  // })()
-
   return (
-    <div className="App">
+    <div className='App'>
       <h1>Prueba técnica</h1>
+      <Results />
       <header>
         <button onClick={toggleColors}>
           Colorear files
@@ -109,13 +77,26 @@ function App () {
           Resetear estado
         </button>
 
-        <input placeholder='Filtra por país' onChange={(e) => {
-          setFilterCountry(e.target.value)
-        }} />
+        <input
+          placeholder='Filtra por país' onChange={(e) => {
+            setFilterCountry(e.target.value)
+          }}
+        />
 
       </header>
       <main>
-        <UsersList changeSorting={handleChangeSort} deleteUser={handleDelete} showColors={showColors} users={sortedUsers} />
+        {users.length > 0 &&
+          <UsersList changeSorting={handleChangeSort} deleteUser={handleDelete} showColors={showColors} users={sortedUsers} />}
+
+        {isLoading && <strong>Cargando...</strong>}
+
+        {isError && <p>Ha habido un error</p>}
+
+        {!isLoading && !isError && users.length === 0 && <p>No hay usuarios</p>}
+
+        {!isLoading && !isError && hasNextPage === true && <button onClick={() => { void fetchNextPage() }}>Cargar más resultados</button>}
+
+        {!isLoading && !isError && hasNextPage === false && <p>No hay más resultados</p>}
       </main>
     </div>
   )
